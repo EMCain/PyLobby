@@ -1,10 +1,16 @@
 import requests
 
+class APIError(Exception):
+    def __init__(self, response):
+        self.message = f'Request to {response.url} returned {response.status_code}: {response._content}'
+
+    def __str__(self):
+        return self.message
+
 class Wrapper:
-    
     base_url = 'http://www.opensecrets.org/api'
-    def __init__(self, apikey):
-        self.api_key = apikey 
+    def __init__(self, api_key):
+        self.api_key = api_key 
 
     def get(self, params, endpoint=None): 
         """
@@ -18,9 +24,14 @@ class Wrapper:
         """
         if endpoint is None:
             endpoint = ''
-        
-        return requests.get(f'{self.base_url}/{endpoint}', params={
+
+        results = requests.get(f'{self.base_url}/{endpoint}', params={
             'output':'json',
             'apikey': self.api_key,
             **params}
-            )
+        )
+
+        if results.status_code == 200: 
+            return results.json()
+        else: 
+            raise APIError(results)
